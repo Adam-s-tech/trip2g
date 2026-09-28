@@ -10,6 +10,12 @@ Older tags (`v0.2.0` and below) live in git history only.
 
 ## Unreleased
 
+### MinIO image replaced with Silo
+
+- **What.** The Compose files and the self-hosting guides now run `pgsty/silo` instead of `minio/minio`.
+- **Why.** MinIO ended its open-source distribution and deleted the `minio/minio` images from Docker Hub on 11 September 2026. `docker compose up` fails with `pull access denied for minio/minio`. Silo is the last open-source MinIO server, rebuilt and patched by the Pigsty project: same S3 API, same `MINIO_*` variables, same on-disk format.
+- **How.** In your own `docker-compose.yml`, change `image: minio/minio:latest` to `image: pgsty/silo:latest` and run `docker compose up -d`. Keep the volume: Silo reads the existing data as is. See [[en/user/selfhosted|Self-hosting]].
+
 ### Sync no longer mistakes a note for a font or an image
 
 - **What.** The server no longer rejects ordinary notes with an error like "Unsupported content type: application/vnd.ms-fontobject" (or `audio/mpeg`, `image/gif`, `text/xml`). It now checks one thing only: the content is UTF-8 text with no NUL bytes. A binary file posing as a note is still rejected, now with "File content must be UTF-8 text".
