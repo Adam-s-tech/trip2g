@@ -68,6 +68,19 @@ func (r *Resolver) Resolve(ctx context.Context, plaintext string) (*usertoken.Da
 	return data, nil
 }
 
+// Forget drops every cached resolution of the token with this ID, so the next
+// request carrying it is checked against the database again. Call it after a
+// token is revoked; without it a revoked token keeps resolving until its cache
+// entry expires.
+func (r *Resolver) Forget(tokenID string) {
+	r.cache.Range(func(key, value any) bool {
+		if value.(cacheEntry).tokenID == tokenID { //nolint:errcheck // type assertion is safe: sync.Map stores only cacheEntry values
+			r.cache.Delete(key)
+		}
+		return true
+	})
+}
+
 func (r *Resolver) maybeUpdateLastUsed(tokenID string) {
 	now := time.Now()
 	if v, ok := r.used.Load(tokenID); ok {
