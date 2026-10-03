@@ -168,3 +168,48 @@ var _ personaltoken.Env = (*mockEnv)(nil)
 
 // satisfy usertoken import.
 var _ *usertoken.Data = (*usertoken.Data)(nil)
+
+func TestResolver_ForgetRevokesWithinTheCacheWindow(t *testing.T) {
+	revoked := false
+	env := &mockEnv{
+		tokenByHashFunc: func(_ context.Context, _ string) (db.UserToken, error) {
+			if revoked {
+				return db.UserToken{}, errors.New("sql: no rows")
+			}
+			return validToken(1), nil
+		},
+		adminByUserIDFunc: func(_ context.Context, _ int64) (db.Admin, error) {
+			return db.Admin{}, nil
+		},
+	}
+	r := personaltoken.NewResolver(env)
+	tok := personaltoken.Generate()
+
+	_, err := r.Resolve(context.Background(), tok)
+	require.NoError(t, err)
+
+	revoked = true
+	r.Forget(validToken(1).ID)
+
+	_, err = r.Resolve(context.Background(), tok)
+	require.ErrorIs(t, err, personaltoken.ErrInvalidToken, "a forgotten token must be checked against the database again")
+}
+
+func TestResolver_ForgetLeavesOtherTokensCached(t *testing.T) {
+	env := adminEnv(1)
+	r := personaltoken.NewResolver(env)
+	tok := personaltoken.Generate()
+
+	_, err := r.Resolve(context.Background(), tok)
+	require.NoError(t, err)
+
+	r.Forget("some-other-token")
+
+	_, err = r.Resolve(context.Background(), tok)
+	require.NoError(t, err)
+
+	env.mu.Lock()
+	calls := env.tokenByHashCalls
+	env.mu.Unlock()
+	require.Equal(t, 1, calls, "forgetting another token must not evict this one")
+}
