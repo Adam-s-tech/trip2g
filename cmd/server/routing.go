@@ -147,7 +147,7 @@ func (a *app) handleSitemap(req *appreq.Request) bool {
 	if host != mainHost && host != "" {
 		nvs := a.LiveNoteViews()
 		if nvs != nil {
-			if domainSitemap, ok := nvs.DomainSitemaps[host]; ok && len(domainSitemap) > 0 {
+			if domainSitemap, ok := nvs.DomainSitemaps[host]; ok {
 				req.Req.SetContentType("application/xml; charset=utf-8")
 				req.Req.SetStatusCode(http.StatusOK)
 				req.Req.Response.SetBody(domainSitemap)
