@@ -114,6 +114,30 @@ func TestGenerateForDomain_ExcludeNoIndex(t *testing.T) {
 	require.NotContains(t, xml, "hidden")
 }
 
+func TestGenerateForDomain_NothingIndexable(t *testing.T) {
+	nvs := model.NewNoteViews()
+
+	hidden := &model.NoteView{
+		Permalink:         "/hidden",
+		PermalinkOriginal: "/hidden",
+		Path:              "hidden.md",
+		Free:              true,
+		NoIndex:           true,
+		Routes:            []model.ParsedRoute{{Host: "foo.com", Path: "/"}},
+	}
+	nvs.RegisterNote(hidden)
+
+	// A known domain with nothing to index gets an empty urlset of its own,
+	// never nil: nil makes the handler serve the main domain's sitemap.
+	result, err := GenerateForDomain(nvs, "foo.com", "https://foo.com")
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	xml := string(result)
+	require.Contains(t, xml, "<urlset")
+	require.NotContains(t, xml, "<url>")
+}
+
 func TestGenerateForDomain_EmptyDomain(t *testing.T) {
 	nvs := model.NewNoteViews()
 

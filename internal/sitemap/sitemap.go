@@ -182,10 +182,6 @@ func GenerateForDomain(nvs *model.NoteViews, domain, baseURL string) ([]byte, er
 		urls = append(urls, entry)
 	}
 
-	if len(urls) == 0 {
-		return nil, nil
-	}
-
 	set := urlset{
 		XMLNS: xmlns,
 		URLs:  urls,
